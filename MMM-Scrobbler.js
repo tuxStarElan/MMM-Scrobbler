@@ -8,6 +8,8 @@ Module.register("MMM-Scrobbler",{
 		delayInterval: 120*1000,
 		animationSpeed: 1000,
     },
+	myUpdateInterval: null,
+	
 	getStyles: function() {
 		return ['MMM-Scrobbler.css']
 		},
@@ -19,9 +21,21 @@ Module.register("MMM-Scrobbler",{
 		this.loaded = false;
 		this.delay = this.config.updateInterval;
 		this.failedCounter = 0;
-		this.scheduleUpdate(0);
+		this.scheduleUpdate();
 	},
-    // Override dom generator.
+	
+	suspend : function() {
+	  Log.info("Suspending module: " + this.name);
+	  this.cancelUpdate();
+	},
+	
+    resume : function() {
+	  Log.info("Resuming module: " + this.name);
+	  this.queryLastFm();
+	  this.scheduleUpdate();
+	},
+	
+	// Override dom generator.
     getDom: function() {
         var wrapper = document.createElement("div");
 		if (!this.loaded) {
@@ -37,12 +51,12 @@ Module.register("MMM-Scrobbler",{
 		if(this.songData.playing === "true"){
 			this.failedCounter = 0;
 			this.delay = this.config.updateInterval;
-			this.show(this.config.animationSpeed);
+			//this.show(this.config.animationSpeed);
 			var html = "<div class='player bright'><div class='album-art-container'><div class='album-art'><img src='"+ this.songData.image +"' width='200'></div></div><div class='meta'><table class='small'><tr class='track-name bright'><td>"+this.songData.title+"</td></tr><tr class='artist-name'><td>"+this.songData.artist +"</td></tr><tr class='album-name dimmed'><td>"+this.songData.album+"</td></tr></table></div></div>";
 			wrapper.innerHTML = html;
 		}
 		else{
-			this.hide(this.config.animationSpeed);
+			//this.hide(this.config.animationSpeed);
 			this.failedCounter = this.failedCounter + 1;
 			if(this.failedCounter > this.config.delayCount){
 				this.delay = this.config.delayInterval;
@@ -50,13 +64,14 @@ Module.register("MMM-Scrobbler",{
 			this.songData = {playing:"false"};
 			wrapper.innerHTML = "Not playing...";
 		}
-		this.scheduleUpdate(this.delay);
 		return wrapper;
     },
+
 	queryLastFm: function(){
 		var url = "http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user="+this.config.username+"&api_key="+this.config.apikey+"&limit=1&format=json";
 		var self = this;		
 		var i = new XMLHttpRequest;
+		self.updateDom(self.config.animationSpeed);
 		i.open("GET",url,true),i.onload=function(){
 			var r=JSON.parse(i.responseText);
 			if(!(i.status>=200&&i.status<400)){
@@ -73,15 +88,18 @@ Module.register("MMM-Scrobbler",{
 			i.onerror=function(){Log.error("Something went wrong")};
 		i.send();
 	},	
-	scheduleUpdate: function(delay) {
-		var nextLoad = this.delay;
-		if (typeof delay !== "undefined" && delay >= 0) {
-			nextLoad = delay;
-		}
-		//set update timeout
-		var self = this;		
-		setTimeout(function() {
+	
+	scheduleUpdate: function() {
+		var interval = this.delay
+		var self = this;
+		this.myUpdateInterval = setInterval(function() {
 			self.queryLastFm();
-		}, nextLoad);
-	}
+		}, interval);
+	},
+	
+	cancelUpdate: function() {
+		clearInterval(this.myUpdateInterval);
+	},
+	
+
 });
