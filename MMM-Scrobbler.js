@@ -13,6 +13,7 @@ Module.register("MMM-Scrobbler",{
 	getStyles: function() {
 		return ['MMM-Scrobbler.css']
 		},
+		
 	start: function() {
 		Log.info("Starting module: " + this.name);
 		//set module data object
@@ -25,14 +26,17 @@ Module.register("MMM-Scrobbler",{
 	},
 	
 	suspend : function() {
-	  Log.info("Suspending module: " + this.name);
-	  this.cancelUpdate();
+		Log.info("Suspending module: " + this.name);
+		this.cancelUpdate();
 	},
 	
     resume : function() {
-	  Log.info("Resuming module: " + this.name);
-	  this.queryLastFm();
-	  this.scheduleUpdate();
+		Log.info("Resuming module: " + this.name);
+		this.loaded = false;
+		this.delay = this.config.updateInterval;
+		this.failedCounter = 0;
+		this.queryLastFm();
+		this.scheduleUpdate();
 	},
 	
 	// Override dom generator.
@@ -50,7 +54,11 @@ Module.register("MMM-Scrobbler",{
 		}
 		if(this.songData.playing === "true"){
 			this.failedCounter = 0;
-			this.delay = this.config.updateInterval;
+			if (this.delay != this.config.updateInterval) {
+				this.delay = this.config.updateInterval;
+				cancelUpdate();
+				scheduleUpdate();
+			}
 			//this.show(this.config.animationSpeed);
 			var html = "<div class='player bright'><div class='album-art-container'><div class='album-art'><img src='"+ this.songData.image +"' width='200'></div></div><div class='meta'><table class='small'><tr class='track-name bright'><td>"+this.songData.title+"</td></tr><tr class='artist-name'><td>"+this.songData.artist +"</td></tr><tr class='album-name dimmed'><td>"+this.songData.album+"</td></tr></table></div></div>";
 			wrapper.innerHTML = html;
@@ -58,8 +66,12 @@ Module.register("MMM-Scrobbler",{
 		else{
 			//this.hide(this.config.animationSpeed);
 			this.failedCounter = this.failedCounter + 1;
-			if(this.failedCounter > this.config.delayCount){
-				this.delay = this.config.delayInterval;
+			if (this.failedCounter > this.config.delayCount) {
+				if (this.delay != this.config.delayInterval) {
+					this.delay = this.config.delayInterval;
+					cancelUpdate();
+					scheduleUpdate();
+				}
 			}
 			this.songData = {playing:"false"};
 			wrapper.innerHTML = "Not playing...";
