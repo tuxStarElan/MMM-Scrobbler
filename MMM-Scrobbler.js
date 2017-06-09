@@ -7,6 +7,8 @@ Module.register("MMM-Scrobbler",{
 		delayCount: 5,
 		delayInterval: 120*1000,
 		animationSpeed: 1000,
+	    showAlbumArt: true,
+	    showMetaData: true,
     },
 	myUpdateInterval: null,
 	
@@ -60,7 +62,14 @@ Module.register("MMM-Scrobbler",{
 				scheduleUpdate();
 			}
 			//this.show(this.config.animationSpeed);
-			var html = "<div class='player bright'><div class='album-art-container'><div class='album-art'><img src='"+ this.songData.image +"' width='200'></div></div><div class='meta'><table class='small'><tr class='track-name bright'><td>"+this.songData.title+"</td></tr><tr class='artist-name'><td>"+this.songData.artist +"</td></tr><tr class='album-name dimmed'><td>"+this.songData.album+"</td></tr></table></div></div>";
+			var html = "<div class='player bright'>";
+			if(this.config.showAlbumArt){
+				html += "<div class='album-art-container'><div class='album-art'><img src='"+ this.songData.image +"' width='200'></div></div>";
+			}
+			if(this.config.showMetaData){
+				html += "<div class='meta'><table class='small'><tr class='track-name bright'><td>"+this.songData.title+"</td></tr><tr class='artist-name'><td>"+this.songData.artist +"</td></tr><tr class='album-name dimmed'><td>"+this.songData.album+"</td></tr></table></div>";
+			}
+			html += "</div>";
 			wrapper.innerHTML = html;
 		}
 		else{
@@ -112,6 +121,5 @@ Module.register("MMM-Scrobbler",{
 	cancelUpdate: function() {
 		clearInterval(this.myUpdateInterval);
 	},
-	
 
 });
